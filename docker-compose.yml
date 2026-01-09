@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=LangChain App Boilerplate
+      - DEBUG=true
+      - LLM_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - VECTOR_DB_PROVIDER=chroma
+      - CHROMA_PERSIST_DIRECTORY=/data/chroma
+    volumes:
+      - ./backend:/app
+      - chroma_data:/data/chroma
+    depends_on:
+      - ollama
+    networks:
+      - langchain-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - langchain-network
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - langchain-network
+
+volumes:
+  chroma_data:
+  ollama_data:
+
+networks:
+  langchain-network:
+    driver: bridge
